@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  counter
+  namespace: default
+  labels:
+    app:  counter
+spec:
+  selector:
+    matchLabels:
+      app: counter
+  replicas: 4
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  counter
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name:  counter
+        image:  europe-west1-docker.pkg.dev/data-engineering-students/student-images/k8s-lecture-app:dev
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        # env:
+        # - name: DB_HOST
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: counter
+        #       key: DB_HOST
+        ports:
+        - containerPort:  8080
+          name:  counter-port
+        volumeMounts:
+          - name: counter-volume
+            mountPath: /app/pv-data
+          - name: counter-volume
+            mountPath: /app/mount-2
+      volumes:
+        - name: counter-volume
+          persistentVolumeClaim:
+            claimName: counter-claim
+      # restartPolicy: Always
